@@ -13,16 +13,8 @@ public class GameController : MonoBehaviour
 
     public void Start()
     {
-        CreateForest();
-        //CombineTrees();
-
-        System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
-        sw.Start();
-
-        CombineDummyObjects();
-
-        sw.Stop();
-        Debug.Log("elapsed time:" + sw.ElapsedMilliseconds + " ms");
+        //CreateForest();
+        //CombineDummyObjects();
     }
 
     private void CreateForest()
@@ -45,37 +37,6 @@ public class GameController : MonoBehaviour
         }
     }
 
-    //private void CombineTrees()
-    //{
-    //    MeshFilter[] meshFilters = m_treesContainer.GetComponentsInChildren<MeshFilter>();
-
-    //    if (meshFilters.Length == 0)
-    //        return;
-
-    //    Material[] treeMaterials = meshFilters[0].GetComponent<MeshRenderer>().sharedMaterials;
-
-    //    CombineInstance[] combine = new CombineInstance[meshFilters.Length];
-    //    int p = 0;
-
-    //    while (p < meshFilters.Length)
-    //    {
-    //        MeshFilter meshFilter = meshFilters[p];
-    //        Debug.Log("submesh COUNT:" + meshFilter.sharedMesh.subMeshCount);
-    //        combine[p].mesh = meshFilter.sharedMesh;
-    //        combine[p].transform = meshFilters[p].transform.localToWorldMatrix;
-    //        p++;
-    //    }
-
-    //    GameObject combinedMeshObject = (GameObject)Instantiate(m_emptyMeshObjectPfb);
-    //    combinedMeshObject.name = "Combined trees";
-    //    combinedMeshObject.GetComponent<MeshFilter>().mesh = new Mesh();
-    //    combinedMeshObject.GetComponent<MeshFilter>().mesh.CombineMeshes(combine);
-    //    combinedMeshObject.GetComponent<MeshRenderer>().sharedMaterials = treeMaterials;
-    //    Debug.Log("combined submesh COUNT:" + combinedMeshObject.GetComponent<MeshFilter>().sharedMesh.subMeshCount);
-
-    //    m_treesContainer.SetActive(false);
-    //}
-
     private void CombineDummyObjects()
     {
         MeshFilter[] meshFilters = m_treesContainer.GetComponentsInChildren<MeshFilter>();
@@ -93,7 +54,7 @@ public class GameController : MonoBehaviour
      * Take the objects list and combine all its meshes into one
      * **/
     public void CombineObjectMeshes(List<GameObject> objects)
-    {
+    {        
         Dictionary<Material, List<SingleMaterialMesh>> meshesByMaterial = new Dictionary<Material, List<SingleMaterialMesh>>();
 
         for (int i = 0; i != objects.Count; i++)
@@ -143,6 +104,7 @@ public class GameController : MonoBehaviour
 
             m++;
         }
+        
 
         //finally combine all those meshes in one single big mesh
         CombineInstance[] combineFinal = new CombineInstance[combinedMeshesByMaterial.Count];

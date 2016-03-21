@@ -11,13 +11,13 @@ public class CameraController : MonoBehaviour
 
     void Start()
     {
-        transform.position = Vector3.zero;
-        //Move up
-        transform.position += new Vector3(0f, height, 0f);
-        //Move back
-        transform.position -= new Vector3(0f, 0f, distanceBack);
-        //Look at the center to get an angle
-        transform.LookAt(Vector3.zero);
+        //transform.position = Vector3.zero;
+        ////Move up
+        //transform.position += new Vector3(0f, height, 0f);
+        ////Move back
+        //transform.position -= new Vector3(0f, 0f, distanceBack);
+        ////Look at the center to get an angle
+        //transform.LookAt(Vector3.zero);
     }
 
     void LateUpdate()
