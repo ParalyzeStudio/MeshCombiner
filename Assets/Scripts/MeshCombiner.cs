@@ -8,30 +8,48 @@ public class MeshCombiner : MonoBehaviour
     public List<GameObject> m_objectsToCombine;
 
     /**
-     * Take the objects list and combine all its meshes into one
+     * Combine all meshes that are children of this object
      * **/
-    public void CombineGameObjects()
+    public void CombineChildrenMeshes()
     {
-        if (m_objectsToCombine == null || m_objectsToCombine.Count < 2)
-            return;
+        AddChidrenMeshesToList();
+        CombineGameObjects();
+    }
 
-        Dictionary<Material, List<SingleMaterialMesh>> meshesByMaterial = new Dictionary<Material, List<SingleMaterialMesh>>();
+    /**
+     * Add all children meshes to the list of objects to combine
+     * **/
+    public void AddChidrenMeshesToList()
+    {
+        MeshFilter[] childrenMeshFilters = this.gameObject.GetComponentsInChildren<MeshFilter>();
+        for (int i = 0; i != childrenMeshFilters.Length; i++)
+        {
+            m_objectsToCombine.Add(childrenMeshFilters[i].gameObject);
+        }
+    }
+
+    /**
+     * Sort listed meshes by material
+     * **/
+    public Dictionary<Material, List<SubMesh>> SortMeshesByMaterial()
+    {
+        Dictionary<Material, List<SubMesh>> meshesByMaterial = new Dictionary<Material, List<SubMesh>>();
 
         //sort meshes by material
         for (int i = 0; i != m_objectsToCombine.Count; i++)
         {
             MeshFilter meshFilter = m_objectsToCombine[i].GetComponent<MeshFilter>();
-            List<SingleMaterialMesh> submeshes = ExplodeMeshSubmeshes(meshFilter);
+            List<SubMesh> submeshes = ExplodeMeshSubmeshes(meshFilter);
 
             for (int p = 0; p != submeshes.Count; p++)
             {
                 Material submeshMaterial = submeshes[p].m_material;
-                List<SingleMaterialMesh> listForMaterial;
+                List<SubMesh> listForMaterial;
                 meshesByMaterial.TryGetValue(submeshes[p].m_material, out listForMaterial);
 
                 if (listForMaterial == null)
                 {
-                    listForMaterial = new List<SingleMaterialMesh>();
+                    listForMaterial = new List<SubMesh>();
                     listForMaterial.Add(submeshes[p]);
                     meshesByMaterial.Add(submeshMaterial, listForMaterial);
                 }
@@ -40,15 +58,55 @@ public class MeshCombiner : MonoBehaviour
             }
         }
 
+        return meshesByMaterial;
+    }
+
+    /**
+    * Takes a dictionary of meshes sorted by material and sort them again by shader
+    * **/
+    private Dictionary<Shader, Dictionary<Material, List<SubMesh>>> SortMeshesByShader(Dictionary<Material, List<SubMesh>> meshesByMaterial)
+    {
+        Dictionary<Shader, Dictionary<Material, List<SubMesh>>>  meshesByShader = new Dictionary<Shader, Dictionary<Material, List<SubMesh>>>();
+
+        foreach (KeyValuePair<Material, List<SubMesh>> kvp in meshesByMaterial)
+        {
+            Material material = kvp.Key;
+            List<SubMesh> submeshes = kvp.Value;
+            Shader shader = material.shader;
+
+            Dictionary<Material, List<SubMesh>> meshesForShader;
+            if (!meshesByShader.TryGetValue(shader, out meshesForShader))
+            {
+                Dictionary<Material, List<SubMesh>> meshesForMaterial = new Dictionary<Material, List<SubMesh>>();
+                meshesForMaterial.Add(material, submeshes);
+                meshesByShader.Add(shader, meshesForMaterial);
+            }
+            else
+                meshesForShader.Add(material, submeshes);
+        }
+
+        return meshesByShader;
+    }
+    
+    /**
+     * Take the objects list and combine all its meshes into one
+     * **/
+    public void CombineGameObjects()
+    {
+        if (m_objectsToCombine == null || m_objectsToCombine.Count < 2)
+            return;
+
+        Dictionary<Material, List<SubMesh>> meshesByMaterial = SortMeshesByMaterial();
+
         //combine meshes for each material
         int materialCount = meshesByMaterial.Count;
         Material[] combinedMaterials = new Material[materialCount];
         List<Mesh> combinedMeshesByMaterial = new List<Mesh>(materialCount);
         int m = 0;
-        foreach (KeyValuePair<Material, List<SingleMaterialMesh>> kvp in meshesByMaterial)
+        foreach (KeyValuePair<Material, List<SubMesh>> kvp in meshesByMaterial)
         {
             combinedMaterials[m] = kvp.Key;
-            List<SingleMaterialMesh> meshesToCombine = kvp.Value;
+            List<SubMesh> meshesToCombine = kvp.Value;
             CombineInstance[] combine = new CombineInstance[meshesToCombine.Count];
 
             int p = 0;
@@ -90,15 +148,15 @@ public class MeshCombiner : MonoBehaviour
      * Separate all submeshes from one mesh as we want to sort meshes by material and 1 submesh = 1 material. 
      * If the mesh contains only one submesh just return null so we know we can handle it directly without any more work on it
      * **/
-    private List<SingleMaterialMesh> ExplodeMeshSubmeshes(MeshFilter originalMeshFilter)
+    private List<SubMesh> ExplodeMeshSubmeshes(MeshFilter originalMeshFilter)
     {
         Mesh originalMesh = originalMeshFilter.sharedMesh;
         Material[] originalMaterials = originalMeshFilter.GetComponent<MeshRenderer>().sharedMaterials;
-        List<SingleMaterialMesh> outputMeshes = new List<SingleMaterialMesh>();
+        List<SubMesh> outputMeshes = new List<SubMesh>();
 
         if (originalMesh.subMeshCount == 1)
         {
-            outputMeshes.Add(new SingleMaterialMesh(originalMesh, originalMaterials[0], originalMeshFilter.transform.localToWorldMatrix));
+            outputMeshes.Add(new SubMesh(originalMesh, originalMaterials[0], originalMeshFilter.transform.localToWorldMatrix));
             return outputMeshes;
         }
 
@@ -168,7 +226,7 @@ public class MeshCombiner : MonoBehaviour
             //mesh.uv3 = submeshUV3;
             //mesh.uv4 = submeshUV4;
 
-            outputMeshes.Add(new SingleMaterialMesh(mesh, originalMaterials[i], originalMeshFilter.transform.localToWorldMatrix));
+            outputMeshes.Add(new SubMesh(mesh, originalMaterials[i], originalMeshFilter.transform.localToWorldMatrix));
         }
 
         return outputMeshes;

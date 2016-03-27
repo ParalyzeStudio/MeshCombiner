@@ -55,22 +55,22 @@ public class GameController : MonoBehaviour
      * **/
     public void CombineObjectMeshes(List<GameObject> objects)
     {        
-        Dictionary<Material, List<SingleMaterialMesh>> meshesByMaterial = new Dictionary<Material, List<SingleMaterialMesh>>();
+        Dictionary<Material, List<SubMesh>> meshesByMaterial = new Dictionary<Material, List<SubMesh>>();
 
         for (int i = 0; i != objects.Count; i++)
         {
             MeshFilter meshFilter = objects[i].GetComponent<MeshFilter>();
-            List<SingleMaterialMesh> submeshes = ExplodeMeshSubmeshes(meshFilter);
+            List<SubMesh> submeshes = ExplodeMeshSubmeshes(meshFilter);
 
             for (int p = 0; p != submeshes.Count; p++)
             {
                 Material submeshMaterial = submeshes[p].m_material;
-                List<SingleMaterialMesh> listForMaterial;
+                List<SubMesh> listForMaterial;
                 meshesByMaterial.TryGetValue(submeshes[p].m_material, out listForMaterial);
 
                 if (listForMaterial == null)
                 {
-                    listForMaterial = new List<SingleMaterialMesh>();
+                    listForMaterial = new List<SubMesh>();
                     listForMaterial.Add(submeshes[p]);
                     meshesByMaterial.Add(submeshMaterial, listForMaterial);
                 }
@@ -84,10 +84,10 @@ public class GameController : MonoBehaviour
         Material[] combinedMaterials = new Material[materialCount];
         List<Mesh> combinedMeshesByMaterial = new List<Mesh>(materialCount);
         int m = 0;
-        foreach (KeyValuePair<Material, List<SingleMaterialMesh>> kvp in meshesByMaterial)
+        foreach (KeyValuePair<Material, List<SubMesh>> kvp in meshesByMaterial)
         {
             combinedMaterials[m] = kvp.Key;
-            List<SingleMaterialMesh> meshesToCombine = kvp.Value;
+            List<SubMesh> meshesToCombine = kvp.Value;
             CombineInstance[] combine = new CombineInstance[meshesToCombine.Count];
 
             int p = 0;
@@ -132,10 +132,10 @@ public class GameController : MonoBehaviour
     /**
      * Separate all submeshes from one mesh. If the mesh contains only one submesh just return it with its material
      * **/
-    private List<SingleMaterialMesh> ExplodeMeshSubmeshes(MeshFilter originalMeshFilter)
+    private List<SubMesh> ExplodeMeshSubmeshes(MeshFilter originalMeshFilter)
     {
         Mesh originalMesh = originalMeshFilter.sharedMesh;
-        List<SingleMaterialMesh> outputMeshes = new List<SingleMaterialMesh>();
+        List<SubMesh> outputMeshes = new List<SubMesh>();
 
         if (originalMesh.subMeshCount == 1)
             return null;
@@ -208,7 +208,7 @@ public class GameController : MonoBehaviour
             mesh.uv3 = submeshUV3;
             mesh.uv4 = submeshUV4;
 
-            outputMeshes.Add(new SingleMaterialMesh(mesh, originalMaterials[i], originalMeshFilter.transform.localToWorldMatrix));
+            outputMeshes.Add(new SubMesh(mesh, originalMaterials[i], originalMeshFilter.transform.localToWorldMatrix));
         }
 
         return outputMeshes;
